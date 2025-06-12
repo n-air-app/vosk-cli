@@ -1,0 +1,21 @@
+# Visual Studioのビルド出力
+.vs/
+x64/
+Debug/
+Release/
+
+# ユーザー固有の設定ファイル
+*.user
+
+# ビルド生成物
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.log
+*.tlog
+*.idb
+
+# 音声モデルファイル（サイズが大きいため）
+model/**
+node_modules
