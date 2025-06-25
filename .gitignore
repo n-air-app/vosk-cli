@@ -19,3 +19,4 @@ Release/
 # 音声モデルファイル（サイズが大きいため）
 model/**
 node_modules
+recorded_converted.wav
