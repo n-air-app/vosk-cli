@@ -1,4 +1,4 @@
-# VOSK CLI アプリケーション
+# STT CLI アプリケーション
 
 VOSKライブラリを使用した音声認識のコマンドラインインターフェイスアプリケーションです。このツールは、マイクからのオーディオ入力をリアルタイムで音声認識します。
 
@@ -13,14 +13,14 @@ VOSKライブラリを使用した音声認識のコマンドラインインタ�
 ## 使い方
 
 ```
-vosk_cli [options]
+stt_cli [options]
 ```
 
 ### オプション
 
 - `-l` - 利用可能な入力オーディオデバイスをJSON形式で一覧表示
 - `-d index` - 使用するオーディオデバイスのインデックスを指定（デフォルト：0）
-- `-m path` - 音声認識モデルのパスを指定（デフォルト：model/vosk-model-ja-0.22）
+- `-m path` - 音声認識モデルのパスを指定（デフォルト：model/vosk-model-small-ja-0.22）
 - `-test` - 10秒間の音声を録音し、「recorded_converted.wav」としてWAVファイルに保存
 - `-textonly` - 最終認識結果のみを表示（部分的な中間結果を表示しない）
 - `-h` - ヘルプメッセージを表示
@@ -29,27 +29,37 @@ vosk_cli [options]
 
 デフォルト設定でアプリケーションを実行（デバイス0、日本語モデル）:
 ```
-vosk_cli
+stt_cli
 ```
 
 別のオーディオデバイス（インデックス2）で実行:
 ```
-vosk_cli -d 2
+stt_cli -d 2
+```
+
+軽量版モデルを使用:
+```
+stt_cli -m model/vosk-model-small-ja-0.22
+```
+
+通常版モデルを使用:
+```
+stt_cli -m model/vosk-model-ja-0.22
 ```
 
 英語のモデルを使用:
 ```
-vosk_cli -m model/vosk-model-small-en-us-0.15
+stt_cli -m model/vosk-model-small-en-us-0.15
 ```
 
 利用可能なオーディオデバイスのリストを表示:
 ```
-vosk_cli -l
+stt_cli -l
 ```
 
 テストモードで実行（10秒間録音してWAVファイルを保存）:
 ```
-vosk_cli -test
+stt_cli -test
 ```
 
 ## 必要条件
@@ -57,16 +67,31 @@ vosk_cli -test
 - Windows OS
 - VC++ ランタイム
 - オーディオ入力デバイス（マイク）
+- VOSKモデル（下記参照）
+
+## モデルのダウンロード
+
+### 自動ダウンロード（推奨）
+`download_model.bat`を実行すると、日本語モデルを自動的にダウンロードできます：
+```
+download_model.bat
+```
+
+このバッチファイルは以下のモデルをダウンロードします：
+- `vosk-model-small-ja-0.22` - 軽量版（約50MB）
+- `vosk-model-ja-0.22` - 通常版（約1.5GB、高精度）
+
+### 手動ダウンロード
+[VOSK Models](https://alphacephei.com/vosk/models)から直接ダウンロードして、`model`フォルダに展開することも可能です。
 
 ## ビルド方法
 
-このプロジェクトをビルドするには、Visual Studioを使用してソリューションファイル（vosk_cli.sln）を開き、ビルドしてください。
+このプロジェクトをビルドするには、Visual Studioを使用してソリューションファイル（`stt_cli.sln`）を開き、ビルドしてください。
 
-## モデル
+## 利用可能なモデル
 
 このアプリケーションは、以下のVOSKモデルと互換性があります：
 
-- vosk-model-ja-0.22（日本語、デフォルト）
-- vosk-model-small-en-us-0.15（英語）
-
-その他のVOSKモデルも `-m` オプションで指定すれば使用できます。モデルは [VOSK Models](https://alphacephei.com/vosk/models) からダウンロードできます。
+- `vosk-model-small-ja-0.22` - 日本語軽量版（約50MB）
+- `vosk-model-ja-0.22` - 日本語通常版（約1.5GB、高精度）
+- `vosk-model-small-en-us-0.15` - 英語軽量版
