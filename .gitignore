@@ -9,7 +9,6 @@ Release/
 
 # ビルド生成物
 *.obj
-*.exe
 *.pdb
 *.ilk
 *.log

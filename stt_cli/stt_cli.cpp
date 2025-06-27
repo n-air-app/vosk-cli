@@ -3,6 +3,10 @@
 // 指定されたモデルを使用してwindows音声入力から認識します
 //-----------------------------------------------------------------------------
 
+// バージョン情報
+#define STT_CLI_VERSION "1.0.0"
+#define STT_CLI_BUILD_DATE __DATE__
+
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
@@ -115,7 +119,9 @@ void OutputDevicesAsJson() {
     printf("      \"name\": \"%s\"\n", name.c_str());
     printf("    }%s\n", (i < devices.size() - 1) ? "," : "");
   }
-  printf("  ]\n}");
+  printf("  ],\n");
+  printf("  \"version\": \"%s\"\n", STT_CLI_VERSION);
+  printf("}\n");
 }
 
 /**
@@ -603,6 +609,9 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
  * コマンドライン引数の詳細と使用例を標準出力に表示します。
  */
 void printUsage() {
+  printf("STT CLI - Speech To Text Command Line Interface\n");
+  printf("Version: %s (Built: %s)\n", STT_CLI_VERSION, STT_CLI_BUILD_DATE);
+  printf("\n");
   printf("Usage: vosk_cli [options]\n");
   printf("Options:\n");
   printf("  -l          List input audio devices in JSON format\n");
@@ -716,10 +725,11 @@ int main(int argc, char *argv[]) {
 
   char *modelPath =
       _strdup("model/vosk-model-small-ja-0.22");  // 音声認識モデルのパス
-  bool listDevices = false;                 // デバイス一覧表示フラグ
-  int deviceIndex = 0;                      // オーディオデバイスのインデックス
-  bool isTest = false;                      // テストモードフラグ
+  bool listDevices = false;                       // デバイス一覧表示フラグ
+  int deviceIndex = 0;    // オーディオデバイスのインデックス
+  bool isTest = false;    // テストモードフラグ
   bool textOnly = false;  // テキストのみフラグ（部分結果を表示しない）
+
   // 引数の解析
   if (parseArguments(argc, argv, &modelPath, &listDevices, &deviceIndex,
                      &isTest, &textOnly) != 0) {
