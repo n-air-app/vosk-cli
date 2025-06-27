@@ -528,7 +528,7 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
     }
 
     if (packetLength == 0) {
-      Sleep(100);  // パケットがない場合は少し待つ
+      Sleep(10);  // パケットがない場合は少し待つ
       continue;
     }
 
@@ -543,7 +543,7 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
 
     // サイレンスでない場合のみ処理
     if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT)) {
-      // このパケットのデータを16kHzモノラルに変換（浮動小数点形式を考慮）
+      // このパケットのデータを16kHzモノラルに変換
       convertedData = ConvertBufferToMono16k(data, numFrames, sample_rate,
                                              channels, bits_per_sample);
 
@@ -608,7 +608,7 @@ void printUsage() {
   printf("  -l          List input audio devices in JSON format\n");
   printf("  -d index    Specify the audio device index (default: 0)\n");
   printf("  -m path     Specify the path to the speech recognition model\n");
-  printf("              (default: model/vosk-model-ja-0.22)\n");
+  printf("              (default: model/vosk-model-small-ja-0.22)\n");
   printf("  -test       Test record 10sec and output wav\n");
   printf(
       "  -textonly   Show only final recognition results (no partial "
@@ -715,7 +715,7 @@ int main(int argc, char *argv[]) {
   setlocale(LC_ALL, ".UTF8");
 
   char *modelPath =
-      _strdup("model/vosk-model-ja-0.22");  // 音声認識モデルのパス
+      _strdup("model/vosk-model-small-ja-0.22");  // 音声認識モデルのパス
   bool listDevices = false;                 // デバイス一覧表示フラグ
   int deviceIndex = 0;                      // オーディオデバイスのインデックス
   bool isTest = false;                      // テストモードフラグ
