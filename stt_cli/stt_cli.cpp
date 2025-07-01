@@ -37,6 +37,7 @@
  */
 void outputJsonError(const std::string &message) {
   printf("{\"error\":\"%s\"}\n", message.c_str());
+  fflush(stdout);
 }
 
 /**
@@ -122,6 +123,8 @@ void OutputDevicesAsJson() {
   printf("  ],\n");
   printf("  \"version\": \"%s\"\n", STT_CLI_VERSION);
   printf("}\n");
+    fflush(stdout);
+
 }
 
 /**
@@ -303,6 +306,8 @@ void PrintDeviceFormat(WAVEFORMATEX *deviceFormat) {
 
   printf("  }\n");
   printf("}\n");
+    fflush(stdout);
+
 }
 
 /**
@@ -524,6 +529,7 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
   std::vector<short> convertedBuffer;
 
   puts("{\"info\":\"start\"}");
+  fflush(stdout);
 
   while (!isTest || GetTickCount() < endTime) {
     UINT32 packetLength = 0;
@@ -569,6 +575,8 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
           std::string resultStr = RemoveSpaces(result);
           if (!resultStr.empty() && resultStr != "{\"text\":\"\"}") {
             puts(resultStr.c_str());
+              fflush(stdout);
+
           }
 
           // 最終結果が出力されたら部分認識結果をリセット
@@ -581,6 +589,8 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
           // 空または前回と同じ結果は出力しない
           if (!partialResult.empty() && partialResult != lastPartialResult) {
             puts(partialResult.c_str());
+              fflush(stdout);
+
             lastPartialResult = partialResult;  // 最後の部分結果を更新
           }
         }
