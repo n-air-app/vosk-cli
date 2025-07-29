@@ -106,25 +106,25 @@ std::vector<AudioDeviceInfo> EnumerateInputDevices() {
  */
 void OutputDevicesAsJson() {
   std::vector<AudioDeviceInfo> devices = EnumerateInputDevices();
-  printf("{\n");
-  printf("  \"devices\": [\n");
+  std::string json = "{\"devices\":[";
+
   for (size_t i = 0; i < devices.size(); ++i) {
     // ワイド文字列をUTF-8に変換
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
     std::string id = converter.to_bytes(devices[i].id);
     std::string name = converter.to_bytes(devices[i].name);
 
-    printf("    {\n");
-    printf("      \"index\": %d,\n", (int)i);
-    printf("      \"id\": \"%s\",\n", id.c_str());
-    printf("      \"name\": \"%s\"\n", name.c_str());
-    printf("    }%s\n", (i < devices.size() - 1) ? "," : "");
-  }
-  printf("  ],\n");
-  printf("  \"version\": \"%s\"\n", STT_CLI_VERSION);
-  printf("}\n");
-    fflush(stdout);
+    json += "{";
+    json += "\"index\":" + std::to_string(i) + ",";
+    json += "\"id\":\"" + id + "\",";
+    json += "\"name\":\"" + name + "\"";
+    json += "}";
 
+    if (i < devices.size() - 1) json += ",";
+  }
+
+  json += "],\"version\":\"" + std::string(STT_CLI_VERSION) + "\"}";
+  puts(json.c_str());
 }
 
 /**
@@ -306,8 +306,7 @@ void PrintDeviceFormat(WAVEFORMATEX *deviceFormat) {
 
   printf("  }\n");
   printf("}\n");
-    fflush(stdout);
-
+  fflush(stdout);
 }
 
 /**
@@ -448,7 +447,7 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
   convertedData.reserve(16000);  // 1秒分のバッファを事前確保
 
   // 前回の部分認識結果を保持する変数
-  std::string lastPartialResult;
+  std::string lastPartialStr;
 
   CoInitialize(nullptr);  // COMを初期化
 
@@ -494,7 +493,7 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
   resources.setDeviceFormat(deviceFormat);  // 自動解放の対象に追加
 
   // フォーマット情報を表示
-  PrintDeviceFormat(deviceFormat);  // フォーマット情報を保存
+  // PrintDeviceFormat(deviceFormat); 
 
   int sample_rate = deviceFormat->nSamplesPerSec;
   int channels = deviceFormat->nChannels;
@@ -575,23 +574,22 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
           std::string resultStr = RemoveSpaces(result);
           if (!resultStr.empty() && resultStr != "{\"text\":\"\"}") {
             puts(resultStr.c_str());
-              fflush(stdout);
-
+            fflush(stdout);
           }
 
           // 最終結果が出力されたら部分認識結果をリセット
-          lastPartialResult.clear();
+          lastPartialStr.clear();
         } else if (!textOnly) {
           const char *partial = vosk_recognizer_partial_result(recognizer);
           // 部分認識結果を取得
-          std::string partialResult = RemoveSpaces(partial);
+          std::string partialStr = RemoveSpaces(partial);
 
           // 空または前回と同じ結果は出力しない
-          if (!partialResult.empty() && partialResult != lastPartialResult) {
-            puts(partialResult.c_str());
-              fflush(stdout);
+          if (!partialStr.empty() && partialStr != "{\"partial\":\"\"}" && partialStr != lastPartialStr) {
+            puts(partialStr.c_str());
+            fflush(stdout);
 
-            lastPartialResult = partialResult;  // 最後の部分結果を更新
+            lastPartialStr = partialStr;  // 最後の部分結果を更新
           }
         }
       }

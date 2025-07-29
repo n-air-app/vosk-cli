@@ -12,7 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "stt_cli": "git+https://github.com/asaday/stt_cli.git"
+    "stt_cli": "file:.."
   },
   "devDependencies": {
     "typescript": "^5.0.0",
