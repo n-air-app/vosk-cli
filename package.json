@@ -1,0 +1,20 @@
+{
+  "name": "@n-air-app/stt_cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/index.js",
+    "src/index.d.ts",
+    "bin/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asaday/stt_cli.git"
+  },
+  "scripts": {
+    "build": "build.bat"
+  },
+  "author": ""
+}
