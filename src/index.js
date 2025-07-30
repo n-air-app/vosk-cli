@@ -12,7 +12,7 @@ function getVersion() {
     const parsed = JSON.parse(result);
     return parsed.version;
   } catch (error) {
-    return "x.x.x";
+    return "";
   }
 }
 
@@ -27,16 +27,11 @@ function getDevices() {
   }
 }
 
-function startSpeechRecognition(deviceIndex = 0, modelPath = "", onOutput) {
-  const exePath = getExePath();
-
-  const args = ["-d", deviceIndex.toString()];
+function start({ deviceIndex, modelPath, onData } = {}) {
+  const args = ["-d", (deviceIndex ?? 0).toString()];
   if (modelPath) args.push("-m", modelPath);
 
-  const child = spawn(exePath, args, {
-    stdio: ["pipe", "pipe", "pipe"],
-  });
-
+  const child = spawn(getExePath(), args, { stdio: ["pipe", "pipe", "pipe"] });
   let buffer = "";
 
   child.stdout.on("data", (data) => {
@@ -50,7 +45,7 @@ function startSpeechRecognition(deviceIndex = 0, modelPath = "", onOutput) {
       if (line) {
         try {
           const parsed = JSON.parse(line);
-          if (onOutput) onOutput(parsed);
+          if (onData) onData(parsed);
         } catch (error) {
           // JSONパースエラーは無視（不完全なデータの可能性）
         }
@@ -62,7 +57,7 @@ function startSpeechRecognition(deviceIndex = 0, modelPath = "", onOutput) {
     if (buffer.trim()) {
       try {
         const parsed = JSON.parse(buffer.trim());
-        if (onOutput) onOutput(parsed);
+        if (onData) onData(parsed);
       } catch (error) {
         // JSONパースエラーは無視
       }
@@ -72,9 +67,12 @@ function startSpeechRecognition(deviceIndex = 0, modelPath = "", onOutput) {
   return child;
 }
 
-module.exports = {
+const SpeechToText = {
   getExePath,
   getVersion,
   getDevices,
-  startSpeechRecognition,
+  start,
 };
+
+module.exports = SpeechToText;
+module.exports.default = SpeechToText;

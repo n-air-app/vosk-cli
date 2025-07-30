@@ -6,18 +6,24 @@ export interface AudioDevice {
   name: string;
 }
 
-export interface SpeechRecognitionOutput {
+export interface SpeechToTextOutput {
   text?: string;
   partial?: string;
   info?: string;
   error?: string;
 }
 
-export declare function getExePath(): string;
-export declare function getVersion(): string;
-export declare function getDevices(): AudioDevice[];
-export declare function startSpeechRecognition(
-  deviceIndex: number,
-  modelPath: string,
-  onOutput: (jsonOutput: SpeechRecognitionOutput) => void
-): ChildProcess;
+export interface SpeechToTextOptions {
+  deviceIndex?: number;
+  modelPath?: string;
+  onData: (output: SpeechToTextOutput) => void;
+}
+
+declare const SpeechToText: {
+  getExePath: () => string;
+  getVersion: () => string;
+  getDevices: () => AudioDevice[];
+  start: (options: SpeechToTextOptions) => ChildProcess;
+};
+
+export default SpeechToText;

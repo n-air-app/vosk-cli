@@ -15,6 +15,5 @@
   },
   "scripts": {
     "build": "build.bat"
-  },
-  "author": ""
+  }
 }
