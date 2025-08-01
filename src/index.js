@@ -1,5 +1,9 @@
 const path = require("path");
 const { execSync, spawn } = require("child_process");
+const {
+  downloadModel,
+  isExistModel,
+} = require("./download");
 
 function getExePath() {
   return path.resolve(__dirname, "../bin/stt_cli.exe");
@@ -72,6 +76,8 @@ const SpeechToText = {
   getVersion,
   getDevices,
   start,
+  downloadModel,
+  isExistModel,
 };
 
 module.exports = SpeechToText;

@@ -15,5 +15,8 @@
   },
   "scripts": {
     "build": "build.bat"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10"
   }
 }

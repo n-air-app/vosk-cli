@@ -20,3 +20,4 @@ model/**
 node_modules
 recorded_converted.wav
 example/dist
+example/temp

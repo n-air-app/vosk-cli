@@ -19,11 +19,21 @@ export interface SpeechToTextOptions {
   onData: (output: SpeechToTextOutput) => void;
 }
 
+
 declare const SpeechToText: {
   getExePath: () => string;
   getVersion: () => string;
   getDevices: () => AudioDevice[];
   start: (options: SpeechToTextOptions) => ChildProcess;
+
+  downloadModel: (
+    url: string,
+    modelPath: string,
+    tempDir: string,
+    force?: boolean
+  ) => Promise<void>;
+  isExistModel: (modelPath: string) => boolean;
+  models: Models;
 };
 
 export default SpeechToText;
