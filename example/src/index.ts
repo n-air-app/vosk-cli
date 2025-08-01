@@ -20,6 +20,10 @@ async function main() {
   const url = models.small.url;
   const modelPath = `./temp/model/${models.small.base}`;
 
+  // モデルの存在確認
+  const exist = SpeechToText.isExistModel(modelPath);
+  console.log(`モデルの存在確認: ${modelPath} - ${exist}`);
+
   // モデルのダウンロード(存在すればスキップ)
   console.log(`モデルのダウンロード: ${url}`);
   await SpeechToText.downloadModel(url, modelPath, "./temp/temp");

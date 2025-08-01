@@ -32,22 +32,20 @@ function downloadFile(url, filePath) {
 }
 
 async function downloadAndExtract(url, modelPath, tempDir) {
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-
   const tempZipPath = path.join(tempDir, "temp.zip");
   const tempExtractDir = path.join(tempDir, "extracted");
 
   await downloadFile(url, tempZipPath);
 
+  // 展開
   const zip = new AdmZip(tempZipPath);
   zip.extractAllTo(tempExtractDir, true);
 
   // 一時ディレクトリ内の最初のディレクトリを探す
   const extractedItems = fs.readdirSync(tempExtractDir);
-  const extractedDirBase = extractedItems.find((item) => {
-    const itemPath = path.join(tempExtractDir, item);
-    return fs.statSync(itemPath).isDirectory();
-  });
+  const extractedDirBase = extractedItems.find((item) =>
+    fs.statSync(path.join(tempExtractDir, item)).isDirectory()
+  );
   if (!extractedDirBase)
     throw new Error("No directory found in extracted archive");
   const extractedDir = path.join(tempExtractDir, extractedDirBase);
@@ -57,21 +55,33 @@ async function downloadAndExtract(url, modelPath, tempDir) {
   if (!fs.existsSync(modelParentDir))
     fs.mkdirSync(modelParentDir, { recursive: true });
 
+  // 移動
   fs.renameSync(extractedDir, modelPath);
 }
 
 async function downloadModel(url, modelPath, tempDir, force = false) {
   if (isExistModel(modelPath) && !force) return;
 
-  const temp = path.join(tempDir, `download_${Date.now()}`);
-  await downloadAndExtract(url, modelPath, temp);
-  fs.rmSync(temp, { recursive: true });
+  const temp = path.join(tempDir, `temp_${Date.now()}`);
+
+  try {
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+    await downloadAndExtract(url, modelPath, temp);
+  } catch (error) {
+    throw error;
+  } finally {
+    if (fs.existsSync(temp)) fs.rmSync(temp, { recursive: true, force: true });
+  }
 }
 
 function isExistModel(modelPath) {
   // モデルのconfigが存在するか確認
-  const conf = path.join(modelPath, "conf/model.conf");
-  return fs.existsSync(conf);
+  try {
+    const conf = path.join(modelPath, "conf/model.conf");
+    return fs.existsSync(conf);
+  } catch (error) {
+    return false;
+  }
 }
 
 module.exports = {

@@ -33,7 +33,6 @@ declare const SpeechToText: {
     force?: boolean
   ) => Promise<void>;
   isExistModel: (modelPath: string) => boolean;
-  models: Models;
 };
 
 export default SpeechToText;
