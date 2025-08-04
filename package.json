@@ -1,5 +1,5 @@
 {
-  "name": "@n-air-app/stt_cli",
+  "name": "stt_cli",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.js",
