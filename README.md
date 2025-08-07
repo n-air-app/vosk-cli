@@ -1,4 +1,4 @@
-# STT CLI アプリケーション
+# vosk-cli アプリケーション
 
 VOSKライブラリを使用した音声認識のコマンドラインインターフェイスアプリケーションです。このツールは、マイクからのオーディオ入力をリアルタイムで音声認識します。
 
@@ -19,26 +19,34 @@ VOSKライブラリを使用した音声認識のコマンドラインインタ�
 ### NPMからのインストール
 
 ```bash
-npm install github:asaday/stt_cli
+npm install github:n-air-app/vosk-cli
 ```
+
+
 
 ### Node.jsライブラリとしての使用
 
+package.jsonのdependenciesに追加:
+```json
+{
+  "dependencies": {
+    "vosk-cli": "github:n-air-app/vosk-cli"
+  }
+}
+```
+
+使用例:
 ```javascript
-import SpeechToText from "stt_cli";
+import Vosk from "vosk-cli";
 
 // システム情報の取得
-console.log(SpeechToText.getExePath());
-console.log(SpeechToText.getVersion());
-console.log(SpeechToText.getDevices());
+console.log(Vosk.getExePath());
+console.log(Vosk.getVersion());
+console.log(Vosk.getDevices());
 
-// モデルのダウンロード
-const url = "https://alphacephei.com/vosk/models/vosk-model-small-ja-0.22.zip";
-const modelPath = "./model/vosk-model-small-ja-0.22";
-await SpeechToText.downloadModel(url, modelPath, "./temp");
 
 // 音声認識の開始
-const child = SpeechToText.start({
+const child = Vosk.start({
   deviceIndex: 0,
   modelPath: "./model/vosk-model-small-ja-0.22",
   onData: (data) => {
@@ -60,7 +68,7 @@ setTimeout(() => {
 ## CLIとしての使い方
 
 ```
-stt_cli [options]
+vosk-cli [options]
 ```
 
 ### オプション
@@ -76,37 +84,37 @@ stt_cli [options]
 
 デフォルト設定でアプリケーションを実行（デバイス0、日本語モデル）:
 ```
-stt_cli
+vosk-cli
 ```
 
 別のオーディオデバイス（インデックス2）で実行:
 ```
-stt_cli -d 2
+vosk-cli -d 2
 ```
 
 軽量版モデルを使用:
 ```
-stt_cli -m model/vosk-model-small-ja-0.22
+vosk-cli -m model/vosk-model-small-ja-0.22
 ```
 
 通常版モデルを使用:
 ```
-stt_cli -m model/vosk-model-ja-0.22
+vosk-cli -m model/vosk-model-ja-0.22
 ```
 
 英語のモデルを使用:
 ```
-stt_cli -m model/vosk-model-small-en-us-0.15
+vosk-cli -m model/vosk-model-small-en-us-0.15
 ```
 
 利用可能なオーディオデバイスのリストを表示:
 ```
-stt_cli -l
+vosk-cli -l
 ```
 
 テストモードで実行（10秒間録音してWAVファイルを保存）:
 ```
-stt_cli -test
+vosk-cli -test
 ```
 
 ## 必要条件
@@ -139,7 +147,7 @@ download_model.bat
 
 ## ビルド方法
 
-このプロジェクトをビルドするには、Visual Studioを使用してソリューションファイル（`stt_cli.sln`）を開き、ビルドしてください。
+このプロジェクトをビルドするには、Visual Studioを使用してソリューションファイル（`vosk-cli.sln`）を開き、ビルドしてください。
 
 ## 利用可能なモデル
 
@@ -151,54 +159,35 @@ download_model.bat
 
 ## API リファレンス（Node.jsライブラリとして使用する場合）
 
-### SpeechToText.getExePath()
+### Vosk.getExePath()
 実行ファイルのパスを取得します。
 
 ```javascript
-const exePath = SpeechToText.getExePath();
-console.log(exePath); // "C:\\path\\to\\stt_cli.exe"
+const exePath = Vosk.getExePath();
+console.log(exePath); // "C:\\path\\to\\vosk-cli.exe"
 ```
 
-### SpeechToText.getVersion()
+### Vosk.getVersion()
 バージョン情報を取得します。
 
 ```javascript
-const version = SpeechToText.getVersion();
+const version = Vosk.getVersion();
 console.log(version); // バージョン文字列
 ```
 
-### SpeechToText.getDevices()
+### Vosk.getDevices()
 利用可能なオーディオデバイスの一覧を取得します。
 
 ```javascript
-const devices = SpeechToText.getDevices();
+const devices = Vosk.getDevices();
 console.log(devices); // デバイス情報のJSON配列
 ```
 
-### SpeechToText.isExistModel(modelPath)
-指定されたパスにモデルが存在するかチェックします。
-
-```javascript
-const exists = SpeechToText.isExistModel("./model/vosk-model-small-ja-0.22");
-console.log(exists); // true または false
-```
-
-### SpeechToText.downloadModel(url, modelPath, tempDir)
-モデルをダウンロードして展開します。
-
-```javascript
-await SpeechToText.downloadModel(
-  "https://alphacephei.com/vosk/models/vosk-model-small-ja-0.22.zip",
-  "./model/vosk-model-small-ja-0.22",
-  "./temp"
-);
-```
-
-### SpeechToText.start(options)
+### Vosk.start(options)
 音声認識を開始します。
 
 ```javascript
-const child = SpeechToText.start({
+const child = Vosk.start({
   deviceIndex: 0,                    // オーディオデバイスのインデックス
   modelPath: "./model/vosk-model-small-ja-0.22", // モデルのパス
   onData: (data) => {               // データ受信時のコールバック
@@ -244,11 +233,10 @@ npm install
 を実行して依存関係を再インストールしてください。
 
 **音声認識が開始されない**
-- `SpeechToText.getDevices()` でデバイス一覧を確認し、正しいインデックスを指定してください
-- モデルが正しくダウンロードされているか `SpeechToText.isExistModel()` で確認してください
+- `Vosk.getDevices()` でデバイス一覧を確認し、正しいインデックスを指定してください
 
 **TypeScriptエラー**
 型定義ファイルが正しくインポートされているか確認してください：
 ```typescript
-import SpeechToText from "stt_cli";
+import Vosk from "vosk-cli";
 ```

@@ -32,6 +32,6 @@ echo.
 echo All models downloaded successfully!
 echo.
 echo Usage:
-echo   Small model: stt_cli -m model/vosk-model-small-ja-0.22
-echo   Full model:  stt_cli -m model/vosk-model-ja-0.22
+echo   Small model: vosk-cli -m model/vosk-model-small-ja-0.22
+echo   Full model:  vosk-cli -m model/vosk-model-ja-0.22
 echo.

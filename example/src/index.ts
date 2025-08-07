@@ -1,39 +1,16 @@
-import SpeechToText from "stt_cli";
+import Vosk from "vosk-cli";
 
-const models = {
-  small: {
-    base: "vosk-model-small-ja-0.22",
-    url: "https://alphacephei.com/vosk/models/vosk-model-small-ja-0.22.zip",
-  },
-  large: {
-    base: "vosk-model-ja-0.22",
-    url: "https://alphacephei.com/vosk/models/vosk-model-ja-0.22.zip",
-  },
-};
 
 async function main() {
-  console.log(SpeechToText.getExePath());
-  console.log(SpeechToText.getVersion());
-  console.log(SpeechToText.getDevices());
-
-  // URLおよびmodelPathはコール元で管理
-  const url = models.small.url;
-  const modelPath = `./temp/model/${models.small.base}`;
-
-  // モデルの存在確認
-  const exist = SpeechToText.isExistModel(modelPath);
-  console.log(`モデルの存在確認: ${modelPath} - ${exist}`);
-
-  // モデルのダウンロード(存在すればスキップ)
-  console.log(`モデルのダウンロード: ${url}`);
-  await SpeechToText.downloadModel(url, modelPath, "./temp/temp");
-  console.log("ダウンロード完了:", modelPath);
+  console.log(Vosk.getExePath());
+  console.log(Vosk.getVersion());
+  console.log(Vosk.getDevices());
 
   // 音声認識のテスト
   console.log("\n音声認識を開始します...");
-  const child = SpeechToText.start({
+  const child = Vosk.start({
     deviceIndex: 0,
-    modelPath,
+    modelPath:`../model/vosk-model-small-ja-0.22`,
     onData: (data) => {
       console.log("受信:", JSON.stringify(data));
 

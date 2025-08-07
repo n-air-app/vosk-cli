@@ -4,8 +4,8 @@
 //-----------------------------------------------------------------------------
 
 // バージョン情報
-#define STT_CLI_VERSION "1.0.0"
-#define STT_CLI_BUILD_DATE __DATE__
+#define VOSK_CLI_VERSION "1.0.0"
+#define VOSK_CLI_BUILD_DATE __DATE__
 
 #include <windows.h>
 #include <mmdeviceapi.h>
@@ -123,7 +123,7 @@ void OutputDevicesAsJson() {
     if (i < devices.size() - 1) json += ",";
   }
 
-  json += "],\"version\":\"" + std::string(STT_CLI_VERSION) + "\"}";
+  json += "],\"version\":\"" + std::string(VOSK_CLI_VERSION) + "\"}";
   puts(json.c_str());
 }
 
@@ -617,10 +617,10 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
  * コマンドライン引数の詳細と使用例を標準出力に表示します。
  */
 void printUsage() {
-  printf("STT CLI - Speech To Text Command Line Interface\n");
-  printf("Version: %s (Built: %s)\n", STT_CLI_VERSION, STT_CLI_BUILD_DATE);
+  printf("vosk-cli - Speech To Text Command Line Interface\n");
+  printf("Version: %s (Built: %s)\n", VOSK_CLI_VERSION, VOSK_CLI_BUILD_DATE);
   printf("\n");
-  printf("Usage: vosk_cli [options]\n");
+  printf("Usage: vosk-cli [options]\n");
   printf("Options:\n");
   printf("  -l          List input audio devices in JSON format\n");
   printf("  -d index    Specify the audio device index (default: 0)\n");

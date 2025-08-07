@@ -6,25 +6,25 @@ export interface AudioDevice {
   name: string;
 }
 
-export interface SpeechToTextOutput {
+export interface VoskOutput {
   text?: string;
   partial?: string;
   info?: string;
   error?: string;
 }
 
-export interface SpeechToTextOptions {
+export interface VoskOptions {
   deviceIndex?: number;
   modelPath?: string;
-  onData: (output: SpeechToTextOutput) => void;
+  onData: (output: VoskOutput) => void;
 }
 
 
-declare const SpeechToText: {
+declare const Vosk: {
   getExePath: () => string;
   getVersion: () => string;
   getDevices: () => AudioDevice[];
-  start: (options: SpeechToTextOptions) => ChildProcess;
+  start: (options: VoskOptions) => ChildProcess;
 
   downloadModel: (
     url: string,
@@ -35,4 +35,4 @@ declare const SpeechToText: {
   isExistModel: (modelPath: string) => boolean;
 };
 
-export default SpeechToText;
+export default Vosk;

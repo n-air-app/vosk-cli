@@ -1,12 +1,8 @@
 const path = require("path");
 const { execSync, spawn } = require("child_process");
-const {
-  downloadModel,
-  isExistModel,
-} = require("./download");
 
 function getExePath() {
-  return path.resolve(__dirname, "../bin/stt_cli.exe");
+  return path.resolve(__dirname, "../bin/vosk-cli.exe");
 }
 
 function getVersion() {
@@ -71,14 +67,12 @@ function start({ deviceIndex, modelPath, onData } = {}) {
   return child;
 }
 
-const SpeechToText = {
+const Vosk = {
   getExePath,
   getVersion,
   getDevices,
-  start,
-  downloadModel,
-  isExistModel,
+  start
 };
 
-module.exports = SpeechToText;
-module.exports.default = SpeechToText;
+module.exports = Vosk;
+module.exports.default = Vosk;
