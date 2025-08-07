@@ -25,14 +25,6 @@ declare const Vosk: {
   getVersion: () => string;
   getDevices: () => AudioDevice[];
   start: (options: VoskOptions) => ChildProcess;
-
-  downloadModel: (
-    url: string,
-    modelPath: string,
-    tempDir: string,
-    force?: boolean
-  ) => Promise<void>;
-  isExistModel: (modelPath: string) => boolean;
 };
 
 export default Vosk;
