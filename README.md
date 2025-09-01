@@ -1,8 +1,11 @@
 # vosk-cli アプリケーション
 
-VOSKライブラリを使用した音声認識のコマンドラインインターフェイスアプリケーションです。このツールは、マイクからのオーディオ入力をリアルタイムで音声認識します。
+このプロジェクトは、音声認識エンジン [VOSK](https://alphacephei.com/vosk/) を利用したコマンドラインインターフェイス（CLI）アプリケーションです。
+マイクからの音声入力をリアルタイムでテキスト化します。
 
-**Node.jsライブラリとしても利用可能**: このプロジェクトはスタンドアロンのCLIアプリケーションとして動作するだけでなく、Node.jsプロジェクトの依存関係として組み込んで使用することもできます。
+VOSKの詳細や対応モデルについては、公式サイトもあわせてご参照ください。
+
+Node.jsプロジェクトの依存ライブラリとしても利用できます。
 
 ## 機能
 
@@ -14,7 +17,59 @@ VOSKライブラリを使用した音声認識のコマンドラインインタ�
 - Node.jsライブラリとしての統合
 - 自動モデルダウンロード機能
 
-## インストール
+
+## CLIとしての使い方
+
+```
+bin/vosk-cli [options]
+```
+
+### オプション
+
+- `-l` - 利用可能な入力オーディオデバイスをJSON形式で一覧表示
+- `-d index` - 使用するオーディオデバイスのインデックスを指定
+- `-m path` - 音声認識モデルのパスを指定（デフォルト：model/vosk-model-small-ja-0.22）
+- `-test` - 10秒間の音声を録音し、「recorded_converted.wav」としてWAVファイルに保存
+- `-textonly` - 最終認識結果のみを表示（部分的な中間結果を表示しない）
+- `-h` - ヘルプメッセージを表示
+
+いずれか有効な引数を指定しない場合はヘルプを表示します。
+
+### 例
+
+
+利用可能なオーディオデバイスのリストを表示:
+```
+vosk-cli -l
+```
+
+オーディオデバイス インデックス=0で 実行:
+```
+vosk-cli -d 0
+```
+
+軽量版モデルを使用:
+```
+vosk-cli -m model/vosk-model-small-ja-0.22
+```
+
+通常版モデルを使用:
+```
+vosk-cli -m model/vosk-model-ja-0.22
+```
+
+英語のモデルを使用:
+```
+vosk-cli -m model/vosk-model-small-en-us-0.15
+```
+
+
+テストモードで実行（10秒間録音してWAVファイルを保存）:
+```
+vosk-cli -test
+```
+
+## nodejsライブラリとしての使い方
 
 ### NPMからのインストール
 
@@ -22,9 +77,7 @@ VOSKライブラリを使用した音声認識のコマンドラインインタ�
 npm install github:n-air-app/vosk-cli
 ```
 
-
-
-### Node.jsライブラリとしての使用
+もしくは
 
 package.jsonのdependenciesに追加:
 ```json
@@ -65,58 +118,6 @@ setTimeout(() => {
 ```
 
 
-## CLIとしての使い方
-
-```
-vosk-cli [options]
-```
-
-### オプション
-
-- `-l` - 利用可能な入力オーディオデバイスをJSON形式で一覧表示
-- `-d index` - 使用するオーディオデバイスのインデックスを指定（デフォルト：0）
-- `-m path` - 音声認識モデルのパスを指定（デフォルト：model/vosk-model-small-ja-0.22）
-- `-test` - 10秒間の音声を録音し、「recorded_converted.wav」としてWAVファイルに保存
-- `-textonly` - 最終認識結果のみを表示（部分的な中間結果を表示しない）
-- `-h` - ヘルプメッセージを表示
-
-### 例
-
-デフォルト設定でアプリケーションを実行（デバイス0、日本語モデル）:
-```
-vosk-cli
-```
-
-別のオーディオデバイス（インデックス2）で実行:
-```
-vosk-cli -d 2
-```
-
-軽量版モデルを使用:
-```
-vosk-cli -m model/vosk-model-small-ja-0.22
-```
-
-通常版モデルを使用:
-```
-vosk-cli -m model/vosk-model-ja-0.22
-```
-
-英語のモデルを使用:
-```
-vosk-cli -m model/vosk-model-small-en-us-0.15
-```
-
-利用可能なオーディオデバイスのリストを表示:
-```
-vosk-cli -l
-```
-
-テストモードで実行（10秒間録音してWAVファイルを保存）:
-```
-vosk-cli -test
-```
-
 ## 必要条件
 
 ### CLIアプリケーションとして使用する場合
@@ -132,6 +133,11 @@ vosk-cli -test
 
 ## モデルのダウンロード
 
+モデルは以下のサイトからダウンロードできます。
+
+[https://alphacephei.com/vosk/models](https://alphacephei.com/vosk/models)
+
+
 ### 自動ダウンロード（推奨）
 `download_model.bat`を実行すると、日本語モデルを自動的にダウンロードできます：
 ```
@@ -143,19 +149,11 @@ download_model.bat
 - `vosk-model-ja-0.22` - 通常版（約1.5GB、高精度）
 
 ### 手動ダウンロード
-[VOSK Models](https://alphacephei.com/vosk/models)から直接ダウンロードして、`model`フォルダに展開することも可能です。
+VOSK Modelsから直接ダウンロードして、`model`フォルダに展開することも可能です。
 
 ## ビルド方法
 
 このプロジェクトをビルドするには、Visual Studioを使用してソリューションファイル（`vosk-cli.sln`）を開き、ビルドしてください。
-
-## 利用可能なモデル
-
-このアプリケーションは、以下のVOSKモデルと互換性があります：
-
-- `vosk-model-small-ja-0.22` - 日本語軽量版（約50MB）
-- `vosk-model-ja-0.22` - 日本語通常版（約1.5GB、高精度）
-- `vosk-model-small-en-us-0.15` - 英語軽量版
 
 ## API リファレンス（Node.jsライブラリとして使用する場合）
 
@@ -221,6 +219,21 @@ child.kill();
 ## サンプルコード
 
 完全なサンプルコードは `example` フォルダに含まれています。詳細は [example/readme.md](example/readme.md) を参照してください。
+
+
+
+## 依存DLLについて
+
+`bin` ディレクトリ内の以下の DLL ファイルは、[vosk-api v0.3.45 リリース](https://github.com/alphacep/vosk-api/releases/tag/v0.3.45) から取得しています。
+
+各DLLの詳細やライセンスについては、上記リリースページをご参照ください。
+
+- `libgcc_s_seh-1.dll`
+- `libstdc++-6.dll`
+- `libvosk.dll`
+- `libwinpthread-1.dll`
+
+
 
 ## トラブルシューティング
 
