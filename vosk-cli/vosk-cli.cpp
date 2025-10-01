@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 // バージョン情報
-#define VOSK_CLI_VERSION "1.0.0"
+#define VOSK_CLI_VERSION "1.0.1"
 #define VOSK_CLI_BUILD_DATE __DATE__
 
 #include <windows.h>
@@ -30,13 +30,34 @@
 // VOSKライブラリ
 #pragma comment(lib, "libvosk.lib")
 
+
+/**
+ * @brief 文字列をJSON形式でエスケープする関数
+ */
+std::string escapeJson(const std::string& str) {
+  std::string result;
+  for (char c : str) {
+    if (c == '"') result += "\\\"";
+    else if (c == '\\') result += "\\\\";
+    else if (c == '\n') result += "\\n";
+    else if (c == '\r') result += "\\r";
+    else if (c == '\t') result += "\\t";
+    else if (c >= 0 && c < 0x20) {
+      char buf[7];
+      sprintf_s(buf, "\\u%04x", (unsigned char)c);
+      result += buf;
+    }
+    else result += c;
+  }
+  return result;
+}
 /**
  * @brief JSON形式でエラーメッセージを出力する関数
  *
  * @param message 出力するエラーメッセージ
  */
 void outputJsonError(const std::string &message) {
-  printf("{\"error\":\"%s\"}\n", message.c_str());
+  printf("{\"error\":\"%s\"}\n", escapeJson(message).c_str());
   fflush(stdout);
 }
 
@@ -116,8 +137,8 @@ void OutputDevicesAsJson() {
 
     json += "{";
     json += "\"index\":" + std::to_string(i) + ",";
-    json += "\"id\":\"" + id + "\",";
-    json += "\"name\":\"" + name + "\"";
+    json += "\"id\":\"" + escapeJson(id) + "\",";
+    json += "\"name\":\"" + escapeJson(name) + "\"";
     json += "}";
 
     if (i < devices.size() - 1) json += ",";
