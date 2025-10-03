@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 // バージョン情報
-#define VOSK_CLI_VERSION "1.0.1"
+#define VOSK_CLI_VERSION "1.0.2"
 #define VOSK_CLI_BUILD_DATE __DATE__
 
 #include <windows.h>
@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <wchar.h>
 #include <locale.h>
 //--
 #include <codecvt>
@@ -30,24 +29,28 @@
 // VOSKライブラリ
 #pragma comment(lib, "libvosk.lib")
 
-
 /**
  * @brief 文字列をJSON形式でエスケープする関数
  */
-std::string escapeJson(const std::string& str) {
+std::string escapeJson(const std::string &str) {
   std::string result;
   for (char c : str) {
-    if (c == '"') result += "\\\"";
-    else if (c == '\\') result += "\\\\";
-    else if (c == '\n') result += "\\n";
-    else if (c == '\r') result += "\\r";
-    else if (c == '\t') result += "\\t";
+    if (c == '"')
+      result += "\\\"";
+    else if (c == '\\')
+      result += "\\\\";
+    else if (c == '\n')
+      result += "\\n";
+    else if (c == '\r')
+      result += "\\r";
+    else if (c == '\t')
+      result += "\\t";
     else if (c >= 0 && c < 0x20) {
       char buf[7];
       sprintf_s(buf, "\\u%04x", (unsigned char)c);
       result += buf;
-    }
-    else result += c;
+    } else
+      result += c;
   }
   return result;
 }
@@ -70,9 +73,11 @@ struct AudioDeviceInfo {
 };
 
 /**
- * @brief 利用可能な入力オーディオデバイスを列挙する関数
+ * @brief
+ * 利用可能な入力オーディオデバイスを列挙する関数（デフォルトデバイスを最初にソート）
  *
- * @return std::vector<AudioDeviceInfo> 利用可能なオーディオデバイスの一覧
+ * @return std::vector<AudioDeviceInfo>
+ * 利用可能なオーディオデバイスの一覧（デフォルトデバイスが先頭）
  */
 std::vector<AudioDeviceInfo> EnumerateInputDevices() {
   std::vector<AudioDeviceInfo> devices;
@@ -84,6 +89,19 @@ std::vector<AudioDeviceInfo> EnumerateInputDevices() {
                                 CLSCTX_ALL, IID_PPV_ARGS(&enumerator));
   if (FAILED(hr)) return devices;
 
+  // デフォルトデバイスのIDを取得
+  std::wstring defaultDeviceId;
+  CComPtr<IMMDevice> defaultDevice;
+  hr = enumerator->GetDefaultAudioEndpoint(eCapture, eConsole, &defaultDevice);
+  if (SUCCEEDED(hr)) {
+    LPWSTR deviceId;
+    hr = defaultDevice->GetId(&deviceId);
+    if (SUCCEEDED(hr)) {
+      defaultDeviceId = deviceId;
+      CoTaskMemFree(deviceId);
+    }
+  }
+
   hr = enumerator->EnumAudioEndpoints(eCapture, DEVICE_STATE_ACTIVE,
                                       &collection);
   if (FAILED(hr)) {
@@ -93,7 +111,9 @@ std::vector<AudioDeviceInfo> EnumerateInputDevices() {
 
   UINT count = 0;
   collection->GetCount(&count);
-  for (UINT i = 0; i < count; ++i) {
+
+  // デフォルトデバイスを最初に追加し、その他のデバイスを続けて追加
+  for (UINT i = 0; i < count; i++) {
     CComPtr<IMMDevice> device;
     collection->Item(i, &device);
 
@@ -109,9 +129,17 @@ std::vector<AudioDeviceInfo> EnumerateInputDevices() {
     if (varName.vt != VT_LPWSTR) {
       PropVariantClear(&varName);
       CoTaskMemFree(deviceId);
-      continue;  // 名前が取得できない場合はスキップ
+      continue;
     }
-    devices.push_back({deviceId, varName.pwszVal});
+
+    AudioDeviceInfo deviceInfo = {deviceId, varName.pwszVal};
+
+    // デフォルトデバイスなら最初に追加
+    if (deviceInfo.id == defaultDeviceId) {
+      devices.insert(devices.begin(), deviceInfo);
+    } else {
+      devices.push_back(deviceInfo);
+    }
 
     CoTaskMemFree(deviceId);
     PropVariantClear(&varName);
@@ -156,11 +184,9 @@ void OutputDevicesAsJson() {
  */
 std::string RemoveSpaces(const char *input) {
   if (!input) return "";
-  auto a = std::string(input);
-  std::regex space_pattern("\\s+");
-
   // スペースを空文字列に置換
-  return std::regex_replace(a, space_pattern, "");
+  std::regex space_pattern("\\s+");
+  return std::regex_replace(std::string(input), space_pattern, "");
 }
 
 /**
@@ -514,7 +540,7 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
   resources.setDeviceFormat(deviceFormat);  // 自動解放の対象に追加
 
   // フォーマット情報を表示
-  // PrintDeviceFormat(deviceFormat); 
+  // PrintDeviceFormat(deviceFormat);
 
   int sample_rate = deviceFormat->nSamplesPerSec;
   int channels = deviceFormat->nChannels;
@@ -606,7 +632,8 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
           std::string partialStr = RemoveSpaces(partial);
 
           // 空または前回と同じ結果は出力しない
-          if (!partialStr.empty() && partialStr != "{\"partial\":\"\"}" && partialStr != lastPartialStr) {
+          if (!partialStr.empty() && partialStr != "{\"partial\":\"\"}" &&
+              partialStr != lastPartialStr) {
             puts(partialStr.c_str());
             fflush(stdout);
 
