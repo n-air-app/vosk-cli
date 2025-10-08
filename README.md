@@ -1,5 +1,4 @@
 
-sign1
 
 # vosk-cli アプリケーション
 
