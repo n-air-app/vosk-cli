@@ -1,3 +1,6 @@
+
+sign1
+
 # vosk-cli アプリケーション
 
 このプロジェクトは、音声認識エンジン [VOSK](https://alphacephei.com/vosk/) を利用したコマンドラインインターフェイス（CLI）アプリケーションです。
