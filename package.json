@@ -14,7 +14,9 @@
     "url": "git+https://github.com/n-air-app/vosk-cli.git"
   },
   "scripts": {
-    "build": "build.bat"
+    "build": "build.bat",
+    "release": "node scripts/create-release.js",
+    "release:draft": "node scripts/create-release.js --draft"
   },
   "license": "Apache-2.0"
 }

@@ -255,3 +255,48 @@ npm install
 ```typescript
 import Vosk from "vosk-cli";
 ```
+
+## リリース方法
+
+新しいバージョンをGitHubにリリースする手順：
+
+1. **バージョンを更新**
+   ```bash
+   # package.jsonとvosk-cli.cppのバージョンを一括更新
+   node set-version.js 1.0.3
+   ```
+
+2. **ビルド**
+   ```bash
+   npm run build
+   ```
+
+3. **リリース作成**
+   ```bash
+   # 通常のリリース（公開）
+   npm run release
+   
+   # ドラフトリリース（確認用、非公開）
+   npm run release:draft
+   ```
+
+4. **自動的に実行される処理**
+   - tarballファイル（`.tar.gz`）の作成
+   - Gitタグの作成とプッシュ
+   - GitHubリリースの作成
+   - tarballのアップロード
+
+5. **使用方法の表示**
+   リリース完了後、使用者向けの`package.json`記述方法が表示されます
+
+### 必要な準備
+
+- [GitHub CLI](https://cli.github.com/) のインストール
+  ```bash
+  winget install GitHub.cli
+  ```
+- GitHub CLIへのログイン
+  ```bash
+  gh auth login
+  ```
+

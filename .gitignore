@@ -21,3 +21,7 @@ node_modules
 recorded_converted.wav
 example/dist
 example/temp
+
+# リリースファイル
+*.tar.gz
+vosk-cli-v*/
