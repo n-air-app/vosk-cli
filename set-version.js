@@ -28,6 +28,41 @@ if (fs.existsSync(packageJsonPath)) {
     console.log('! package.json not found');
 }
 
+// Update package-lock.json
+const packageLockPath = 'package-lock.json';
+if (fs.existsSync(packageLockPath)) {
+    try {
+        const lockData = JSON.parse(fs.readFileSync(packageLockPath, 'utf8'));
+        lockData.version = newVersion;
+        if (lockData.packages?.['']) {
+            lockData.packages[''].version = newVersion;
+        }
+        fs.writeFileSync(packageLockPath, JSON.stringify(lockData, null, 2), 'utf8');
+        console.log('+ package-lock.json updated');
+    } catch (error) {
+        console.log('! Error updating package-lock.json:', error.message);
+    }
+} else {
+    console.log('! package-lock.json not found');
+}
+
+// Update the local package entry in the example lockfile
+const examplePackageLockPath = 'example/package-lock.json';
+if (fs.existsSync(examplePackageLockPath)) {
+    try {
+        const lockData = JSON.parse(fs.readFileSync(examplePackageLockPath, 'utf8'));
+        if (lockData.packages?.['..']) {
+            lockData.packages['..'].version = newVersion;
+        }
+        fs.writeFileSync(examplePackageLockPath, JSON.stringify(lockData, null, 2), 'utf8');
+        console.log('+ example/package-lock.json updated');
+    } catch (error) {
+        console.log('! Error updating example/package-lock.json:', error.message);
+    }
+} else {
+    console.log('! example/package-lock.json not found');
+}
+
 // Update vosk-cli.cpp
 const cppPath = 'vosk-cli/vosk-cli.cpp';
 if (fs.existsSync(cppPath)) {

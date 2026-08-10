@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 // バージョン情報
-#define VOSK_CLI_VERSION "1.0.2"
+#define VOSK_CLI_VERSION "1.1.0"
 #define VOSK_CLI_BUILD_DATE __DATE__
 
 #include <windows.h>
