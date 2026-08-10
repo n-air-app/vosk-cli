@@ -508,16 +508,15 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
     return;
   }
 
-  CComPtr<IMMDeviceCollection> collection;
-  // EnumAudioEndpoints エラー処理の修正
-  hr = enumerator->EnumAudioEndpoints(eCapture, DEVICE_STATE_ACTIVE,
-                                      &collection);
-  if (FAILED(hr)) {
-    outputJsonError("EnumAudioEndpoints failed: " + std::to_string(hr));
+  // -l と同じ順序（デフォルトデバイスが先頭）でインデックスを解決する
+  std::vector<AudioDeviceInfo> devices = EnumerateInputDevices();
+  if (deviceIndex < 0 || static_cast<size_t>(deviceIndex) >= devices.size()) {
+    outputJsonError("Invalid device index: " + std::to_string(deviceIndex));
     return;
   }
 
-  hr = collection->Item(deviceIndex, &device);
+  // 列挙順の変化に影響されないよう、解決したデバイスIDから取得する
+  hr = enumerator->GetDevice(devices[deviceIndex].id.c_str(), &device);
   if (FAILED(hr)) {
     outputJsonError("Failed to get device: " + std::to_string(hr));
     return;
