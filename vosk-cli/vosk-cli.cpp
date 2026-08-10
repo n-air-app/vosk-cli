@@ -499,7 +499,6 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
   CoInitialize(nullptr);  // COMを初期化
 
   CComPtr<IMMDeviceEnumerator> enumerator;
-  CComPtr<IMMDevice> device;
   HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
                                 CLSCTX_ALL, IID_PPV_ARGS(&enumerator));
   if (FAILED(hr)) {
@@ -515,91 +514,122 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
     return;
   }
 
-  // 列挙順の変化に影響されないよう、解決したデバイスIDから取得する
-  hr = enumerator->GetDevice(devices[deviceIndex].id.c_str(), &device);
-  if (FAILED(hr)) {
-    outputJsonError("Failed to get device: " + std::to_string(hr));
-    return;
-  }
-
-  CComPtr<IAudioClient> audioClient;
-  hr = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr,
-                        (void **)&audioClient);
-  if (FAILED(hr)) {
-    outputJsonError("Failed to create IAudioClient: " + std::to_string(hr));
-    return;
-  }
-
-  WAVEFORMATEX *deviceFormat;
-  hr = audioClient->GetMixFormat(&deviceFormat);
-  if (FAILED(hr)) {
-    outputJsonError("GetMixFormat failed: " + std::to_string(hr));
-    return;
-  }
-  resources.setDeviceFormat(deviceFormat);  // 自動解放の対象に追加
-
-  // フォーマット情報を表示
-  // PrintDeviceFormat(deviceFormat);
-
-  int sample_rate = deviceFormat->nSamplesPerSec;
-  int channels = deviceFormat->nChannels;
-  int bits_per_sample = deviceFormat->wBitsPerSample;  // 初期化パラメータを設定
-  REFERENCE_TIME hnsRequestedDuration = 10000000;      // 1秒
-
-  hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0,
-                               hnsRequestedDuration, 0, deviceFormat, nullptr);
-  if (FAILED(hr)) {
-    outputJsonError("Initialize failed: " + std::to_string(hr));
-    return;
-  }
-
-  // キャプチャクライアントの取得
-  CComPtr<IAudioCaptureClient> captureClient;
-  hr = audioClient->GetService(__uuidof(IAudioCaptureClient),
-                               (void **)&captureClient);
-  if (FAILED(hr)) {
-    outputJsonError("GetService failed: " + std::to_string(hr));
-    return;
-  }
-
-  // 録音処理
-  hr = audioClient->Start();
-  if (FAILED(hr)) {
-    outputJsonError("Start failed: " + std::to_string(hr));
-    return;
-  }
+  // 着脱後も同じデバイスを開き直せるよう、添字ではなくIDを保持する
+  const std::wstring selectedDeviceId = devices[deviceIndex].id;
 
   DWORD startTime = GetTickCount();
   DWORD endTime = startTime + (10 * 1000);
   std::vector<short> convertedBuffer;
-
-  puts("{\"info\":\"start\"}");
-  fflush(stdout);
+  constexpr int maxReconnectAttempts = 120;
+  constexpr DWORD reconnectIntervalMs = 500;
+  bool reconnecting = false;
+  int reconnectAttempts = 0;
 
   while (!isTest || GetTickCount() < endTime) {
-    UINT32 packetLength = 0;
-    hr = captureClient->GetNextPacketSize(&packetLength);
+    CComPtr<IMMDevice> device;
+    CComPtr<IAudioClient> audioClient;
+    CComPtr<IAudioCaptureClient> captureClient;
+    WAVEFORMATEX *deviceFormat = nullptr;
+    std::string failedOperation;
+
+    // 無効化されたWASAPIオブジェクトをすべて作り直す
+    hr = enumerator->GetDevice(selectedDeviceId.c_str(), &device);
     if (FAILED(hr)) {
-      outputJsonError("GetNextPacketSize failed: " + std::to_string(hr));
-      break;
+      failedOperation = "GetDevice";
+    } else {
+      hr = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr,
+                            (void **)&audioClient);
+      if (FAILED(hr)) failedOperation = "Activate";
     }
 
-    if (packetLength == 0) {
-      Sleep(10);  // パケットがない場合は少し待つ
+    if (SUCCEEDED(hr)) {
+      hr = audioClient->GetMixFormat(&deviceFormat);
+      if (FAILED(hr)) failedOperation = "GetMixFormat";
+    }
+
+    REFERENCE_TIME hnsRequestedDuration = 10000000;  // 1秒
+    if (SUCCEEDED(hr)) {
+      hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0,
+                                   hnsRequestedDuration, 0, deviceFormat,
+                                   nullptr);
+      if (FAILED(hr)) failedOperation = "Initialize";
+    }
+
+    if (SUCCEEDED(hr)) {
+      hr = audioClient->GetService(__uuidof(IAudioCaptureClient),
+                                   (void **)&captureClient);
+      if (FAILED(hr)) failedOperation = "GetService";
+    }
+
+    if (SUCCEEDED(hr)) {
+      hr = audioClient->Start();
+      if (FAILED(hr)) failedOperation = "Start";
+    }
+
+    if (FAILED(hr)) {
+      if (deviceFormat) CoTaskMemFree(deviceFormat);
+
+      if (!reconnecting) {
+        outputJsonError(failedOperation + " failed: " + std::to_string(hr));
+        return;
+      }
+
+      reconnectAttempts++;
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        outputJsonError("Failed to reconnect audio device: " +
+                        std::to_string(hr));
+        break;
+      }
+      Sleep(reconnectIntervalMs);
       continue;
     }
 
-    BYTE *data;
-    UINT32 numFrames;
-    DWORD flags;
-    hr = captureClient->GetBuffer(&data, &numFrames, &flags, nullptr, nullptr);
-    if (FAILED(hr)) {
-      outputJsonError("GetBuffer failed: " + std::to_string(hr));
-      break;
-    }
+    int sample_rate = deviceFormat->nSamplesPerSec;
+    int channels = deviceFormat->nChannels;
+    int bits_per_sample = deviceFormat->wBitsPerSample;
 
-    // サイレンスでない場合のみ処理
-    if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT)) {
+    if (reconnecting) {
+      puts("{\"info\":\"device_reconnected\"}");
+      reconnecting = false;
+      reconnectAttempts = 0;
+      lastPartialStr.clear();
+    } else {
+      puts("{\"info\":\"start\"}");
+    }
+    fflush(stdout);
+
+    bool deviceInvalidated = false;
+    bool captureFailed = false;
+    while (!isTest || GetTickCount() < endTime) {
+      UINT32 packetLength = 0;
+      hr = captureClient->GetNextPacketSize(&packetLength);
+      if (FAILED(hr)) {
+        deviceInvalidated = (hr == AUDCLNT_E_DEVICE_INVALIDATED);
+        if (!deviceInvalidated)
+          outputJsonError("GetNextPacketSize failed: " + std::to_string(hr));
+        captureFailed = true;
+        break;
+      }
+
+      if (packetLength == 0) {
+        Sleep(10);  // パケットがない場合は少し待つ
+        continue;
+      }
+
+      BYTE *data;
+      UINT32 numFrames;
+      DWORD flags;
+      hr = captureClient->GetBuffer(&data, &numFrames, &flags, nullptr, nullptr);
+      if (FAILED(hr)) {
+        deviceInvalidated = (hr == AUDCLNT_E_DEVICE_INVALIDATED);
+        if (!deviceInvalidated)
+          outputJsonError("GetBuffer failed: " + std::to_string(hr));
+        captureFailed = true;
+        break;
+      }
+
+      // サイレンスでない場合のみ処理
+      if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT)) {
       // このパケットのデータを16kHzモノラルに変換
       convertedData = ConvertBufferToMono16k(data, numFrames, sample_rate,
                                              channels, bits_per_sample);
@@ -640,15 +670,33 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
           }
         }
       }
+      }
+      hr = captureClient->ReleaseBuffer(numFrames);
+      if (FAILED(hr)) {
+        deviceInvalidated = (hr == AUDCLNT_E_DEVICE_INVALIDATED);
+        if (!deviceInvalidated)
+          outputJsonError("ReleaseBuffer failed: " + std::to_string(hr));
+        captureFailed = true;
+        break;
+      }
     }
-    hr = captureClient->ReleaseBuffer(numFrames);
-    if (FAILED(hr)) {
-      outputJsonError("ReleaseBuffer failed: " + std::to_string(hr));
-      break;
+
+    audioClient->Stop();
+    CoTaskMemFree(deviceFormat);
+
+    if (deviceInvalidated) {
+      puts("{\"info\":\"device_reconnecting\"}");
+      fflush(stdout);
+      reconnecting = true;
+      reconnectAttempts = 0;
+      Sleep(reconnectIntervalMs);
+      continue;
     }
+
+    if (captureFailed) break;
+    break;
   }
 
-  audioClient->Stop();
   // 最終結果を取得
   const char *finalResult = vosk_recognizer_final_result(recognizer);
   std::string finalResultStr = RemoveSpaces(finalResult);
