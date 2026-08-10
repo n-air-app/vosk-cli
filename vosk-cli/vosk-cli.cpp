@@ -149,6 +149,33 @@ std::vector<AudioDeviceInfo> EnumerateInputDevices() {
 }
 
 /**
+ * @brief インデックスまたはUTF-8のデバイスIDをWASAPIデバイスIDに解決する
+ */
+bool ResolveDeviceId(int deviceIndex, const std::string &deviceId,
+                     std::wstring *resolvedDeviceId) {
+  if (!deviceId.empty()) {
+    try {
+      std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+      *resolvedDeviceId = converter.from_bytes(deviceId);
+      return true;
+    } catch (const std::range_error &) {
+      outputJsonError("Invalid UTF-8 device ID");
+      return false;
+    }
+  }
+
+  // -l と同じ順序（デフォルトデバイスが先頭）でインデックスを解決する
+  std::vector<AudioDeviceInfo> devices = EnumerateInputDevices();
+  if (deviceIndex < 0 || static_cast<size_t>(deviceIndex) >= devices.size()) {
+    outputJsonError("Invalid device index: " + std::to_string(deviceIndex));
+    return false;
+  }
+
+  *resolvedDeviceId = devices[deviceIndex].id;
+  return true;
+}
+
+/**
  * @brief オーディオデバイスの一覧をJSON形式で出力する関数
  *
  * @param devices 出力するデバイス情報の配列
@@ -467,13 +494,13 @@ class ResourceGuard {
 /**
  * @brief マイクからのオーディオストリームを開始し音声認識を実行する関数
  *
- * @param deviceIndex 使用するオーディオデバイスのインデックス
+ * @param deviceId 使用するオーディオデバイスのID
  * @param modelPath 音声認識モデルのパス
  * @param isTest
  * テストモードフラグ（trueの場合、10秒間録音してWAVファイルを保存）
  */
-void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
-                      bool textOnly) {
+void StartAudioStream(const std::wstring &deviceId, const char *modelPath,
+                      bool isTest, bool textOnly) {
   ResourceGuard resources;  // スコープを抜ける際に自動的にリソースを解放
 
   // VOSKモデルのロード
@@ -507,16 +534,6 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
     return;
   }
 
-  // -l と同じ順序（デフォルトデバイスが先頭）でインデックスを解決する
-  std::vector<AudioDeviceInfo> devices = EnumerateInputDevices();
-  if (deviceIndex < 0 || static_cast<size_t>(deviceIndex) >= devices.size()) {
-    outputJsonError("Invalid device index: " + std::to_string(deviceIndex));
-    return;
-  }
-
-  // 着脱後も同じデバイスを開き直せるよう、添字ではなくIDを保持する
-  const std::wstring selectedDeviceId = devices[deviceIndex].id;
-
   DWORD startTime = GetTickCount();
   DWORD endTime = startTime + (10 * 1000);
   std::vector<short> convertedBuffer;
@@ -533,7 +550,7 @@ void StartAudioStream(int deviceIndex, const char *modelPath, bool isTest,
     std::string failedOperation;
 
     // 無効化されたWASAPIオブジェクトをすべて作り直す
-    hr = enumerator->GetDevice(selectedDeviceId.c_str(), &device);
+    hr = enumerator->GetDevice(deviceId.c_str(), &device);
     if (FAILED(hr)) {
       failedOperation = "GetDevice";
     } else {
@@ -719,6 +736,7 @@ void printUsage() {
   printf("Options:\n");
   printf("  -l          List input audio devices in JSON format\n");
   printf("  -d index    Specify the audio device index (default: 0)\n");
+  printf("  -D id       Specify the WASAPI audio device ID\n");
   printf("  -m path     Specify the path to the speech recognition model\n");
   printf("              (default: model/vosk-model-small-ja-0.22)\n");
   printf("  -test       Test record 10sec and output wav\n");
@@ -736,14 +754,19 @@ void printUsage() {
  * @param modelPath モデルパスを格納するポインタ
  * @param listDevices デバイス一覧表示フラグを格納するポインタ
  * @param deviceIndex オーディオデバイスのインデックスを格納するポインタ
+ * @param deviceId オーディオデバイスIDを格納するポインタ
  * @param isTest テストモードフラグを格納するポインタ
  * @param textOnly テキストのみモードフラグを格納するポインタ
  * @return int 成功時は0、エラー時は1を返す
  */
 int parseArguments(int argc, char *argv[], char **modelPath, bool *listDevices,
-                   int *deviceIndex, bool *isTest, bool *textOnly) {  // 初期化
+                   int *deviceIndex, std::string *deviceId, bool *isTest,
+                   bool *textOnly) {  // 初期化
 
   if (argc <= 1) return 1;
+
+  bool deviceIndexSpecified = false;
+  bool deviceIdSpecified = false;
 
   for (int i = 1; i < argc; i++) {
     // -l オプション: デバイス一覧表示
@@ -777,6 +800,11 @@ int parseArguments(int argc, char *argv[], char **modelPath, bool *listDevices,
         return 1;
       }
 
+      if (deviceIdSpecified) {
+        outputJsonError("Options -d and -D cannot be used together");
+        return 1;
+      }
+
       // 数値変換
       try {
         *deviceIndex = std::stoi(argv[i + 1]);
@@ -784,6 +812,25 @@ int parseArguments(int argc, char *argv[], char **modelPath, bool *listDevices,
         outputJsonError("Invalid device index: " + std::string(argv[i + 1]));
         return 1;
       }
+      deviceIndexSpecified = true;
+      i++;
+      continue;
+    }
+    // -D オプション: WASAPIデバイスIDの設定
+    if (!strcmp(argv[i], "-D")) {
+      if (i + 1 >= argc) {
+        outputJsonError("No value specified for option " +
+                        std::string(argv[i]));
+        return 1;
+      }
+
+      if (deviceIndexSpecified) {
+        outputJsonError("Options -d and -D cannot be used together");
+        return 1;
+      }
+
+      *deviceId = argv[i + 1];
+      deviceIdSpecified = true;
       i++;
       continue;
     }
@@ -830,12 +877,13 @@ int main(int argc, char *argv[]) {
       _strdup("model/vosk-model-small-ja-0.22");  // 音声認識モデルのパス
   bool listDevices = false;                       // デバイス一覧表示フラグ
   int deviceIndex = 0;    // オーディオデバイスのインデックス
+  std::string deviceId;   // WASAPIオーディオデバイスID
   bool isTest = false;    // テストモードフラグ
   bool textOnly = false;  // テキストのみフラグ（部分結果を表示しない）
 
   // 引数の解析
   if (parseArguments(argc, argv, &modelPath, &listDevices, &deviceIndex,
-                     &isTest, &textOnly) != 0) {
+                     &deviceId, &isTest, &textOnly) != 0) {
     printUsage();
     return 1;
   }
@@ -846,8 +894,11 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  // モデルパスとデバイスインデックスを指定して音声ストリームを開始
-  StartAudioStream(deviceIndex, modelPath, isTest, textOnly);
+  // -d/-Dを単一のデバイスIDへ解決してから音声ストリームを開始
+  std::wstring resolvedDeviceId;
+  if (!ResolveDeviceId(deviceIndex, deviceId, &resolvedDeviceId)) return 1;
+
+  StartAudioStream(resolvedDeviceId, modelPath, isTest, textOnly);
 
   return 0;
 }

@@ -30,12 +30,15 @@ bin/vosk-cli [options]
 
 - `-l` - 利用可能な入力オーディオデバイスをJSON形式で一覧表示
 - `-d index` - 使用するオーディオデバイスのインデックスを指定
+- `-D id` - 使用するオーディオデバイスのWASAPIデバイスIDを指定（`-d`と同時指定不可）
 - `-m path` - 音声認識モデルのパスを指定（デフォルト：model/vosk-model-small-ja-0.22）
 - `-test` - 10秒間の音声を録音し、「recorded_converted.wav」としてWAVファイルに保存
 - `-textonly` - 最終認識結果のみを表示（部分的な中間結果を表示しない）
 - `-h` - ヘルプメッセージを表示
 
 いずれか有効な引数を指定しない場合はヘルプを表示します。
+
+`-d`は`-l`が返す`index`を指定します。デバイスの着脱で列挙順が変わる可能性があるため、継続的に同じデバイスを識別する用途では`-D`によるID指定を推奨します。
 
 ### 例
 
@@ -49,6 +52,13 @@ vosk-cli -l
 ```
 vosk-cli -d 0
 ```
+
+オーディオデバイスIDで実行:
+```
+vosk-cli -D "{3.0.1.00000002}.{DEVICE-GUID}"
+```
+
+デバイスIDは`vosk-cli -l`の各要素に含まれる`id`から取得します。`-d`と`-D`は同時に指定できません。
 
 軽量版モデルを使用:
 ```
@@ -97,12 +107,13 @@ import Vosk from "vosk-cli";
 // システム情報の取得
 console.log(Vosk.getExePath());
 console.log(Vosk.getVersion());
-console.log(Vosk.getDevices());
+const devices = Vosk.getDevices();
+console.log(devices);
 
 
 // 音声認識の開始
 const child = Vosk.start({
-  deviceIndex: 0,
+  deviceId: devices[0].id,
   modelPath: "./model/vosk-model-small-ja-0.22",
   onData: (data) => {
     if (data.text) {
@@ -188,7 +199,7 @@ console.log(devices); // デバイス情報のJSON配列
 
 ```javascript
 const child = Vosk.start({
-  deviceIndex: 0,                    // オーディオデバイスのインデックス
+  deviceId: devices[0].id,           // WASAPIオーディオデバイスID（推奨）
   modelPath: "./model/vosk-model-small-ja-0.22", // モデルのパス
   onData: (data) => {               // データ受信時のコールバック
     console.log(data);
@@ -202,8 +213,11 @@ child.kill();
 #### オプション
 
 - `deviceIndex` (number): 使用するオーディオデバイスのインデックス
+- `deviceId` (string): 使用するオーディオデバイスのWASAPIデバイスID（`deviceIndex`と同時指定不可）
 - `modelPath` (string): 音声認識モデルのパス
 - `onData` (function): データ受信時のコールバック関数
+
+`deviceId`と`deviceIndex`の両方を省略した場合は、インデックス`0`のデバイスを使用します。デバイスの着脱後も同じデバイスを選択するには`deviceId`を使用してください。
 
 #### データフォーマット
 
@@ -214,7 +228,7 @@ child.kill();
   text: "最終的な認識結果",      // 確定した認識結果
   partial: "部分的な認識結果",   // 認識途中の結果
   error: "エラーメッセージ",     // エラーが発生した場合
-  info: "情報メッセージ"        // その他の情報
+  info: "情報メッセージ"        // start / device_reconnecting / device_reconnected
 }
 ```
 
@@ -248,7 +262,7 @@ npm install
 を実行して依存関係を再インストールしてください。
 
 **音声認識が開始されない**
-- `Vosk.getDevices()` でデバイス一覧を確認し、正しいインデックスを指定してください
+- `Vosk.getDevices()`でデバイス一覧を確認し、対象の`id`を`deviceId`に指定してください
 
 **TypeScriptエラー**
 型定義ファイルが正しくインポートされているか確認してください：

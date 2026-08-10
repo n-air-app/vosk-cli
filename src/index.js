@@ -27,8 +27,14 @@ function getDevices() {
   }
 }
 
-function start({ deviceIndex, modelPath, onData } = {}) {
-  const args = ["-d", (deviceIndex ?? 0).toString()];
+function start({ deviceIndex, deviceId, modelPath, onData } = {}) {
+  if (deviceId != null && deviceIndex != null) {
+    throw new Error("deviceId and deviceIndex cannot be used together");
+  }
+
+  const args = deviceId != null
+    ? ["-D", deviceId]
+    : ["-d", (deviceIndex ?? 0).toString()];
   if (modelPath) args.push("-m", modelPath);
 
   const child = spawn(getExePath(), args, { stdio: ["pipe", "pipe", "pipe"] });

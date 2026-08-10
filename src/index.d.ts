@@ -15,6 +15,7 @@ export interface VoskOutput {
 
 export interface VoskOptions {
   deviceIndex?: number;
+  deviceId?: string;
   modelPath?: string;
   onData: (output: VoskOutput) => void;
 }
